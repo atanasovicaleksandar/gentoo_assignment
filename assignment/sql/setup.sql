@@ -1,8 +1,10 @@
-CREATE OR REPLACE TABLE puzzle_submissions (
-    submission_id INTEGER,
-    source        VARCHAR,     -- 'web', 'app', 'partner_api'
-    puzzle        VARCHAR,     -- 81-character puzzle string
-    submitted_at  TIMESTAMP
+DROP TABLE IF EXISTS puzzle_submissions;
+
+CREATE TABLE puzzle_submissions (
+    submission_id INTEGER PRIMARY KEY,
+    source VARCHAR(50),
+    puzzle VARCHAR,
+    submitted_at TIMESTAMP
 );
 
 INSERT INTO puzzle_submissions VALUES
