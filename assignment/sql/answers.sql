@@ -9,8 +9,10 @@
 -- Firstly I rewrote the initial ingestion sql syntax so it reflects postgres db I use (not an error, but something to point out I know you use Snowflake and it works)
 -- Secondly, due to cleaner approach I decided to use DROP TABLE IF EXISTS first then doing CREATE TABLE so we can start with a clean dataset
 -- After that, there is one really important thing to keep in mind. submission_id should be treated as a primary key
+-- 
 -- submission_id INTEGER PRIMARY KEY
 -- THat way each submission is unique, which is a way of validating an id as such...
+-- This might not be the best approach but I did decide on that. Since by keeping this as primary key we do drop duplicate records that we'll not see in the model...
 -- We will not be implementing 81 character constraint so we can test invalid inputs...
 
 
@@ -122,7 +124,8 @@ ORDER BY b.submission_id;
 
 -- This is simple enough. You just use ROW_NUMBER for deduplication. If you have more than 1 record by puzzle and source, it's a duplicate.
 -- You filter out in the second query table. WHERE rn = 1
--- Why not RANK or DENSE RANK? Because they don't provide the same results and are not good for deduplication
+-- Why not RANK or DENSE RANK? Because they don't provide the same results and are not good for deduplication.
+-- They tend to return multiple rows when ordering numbers are tie...
 WITH ranked AS (
     SELECT
         *,
@@ -242,14 +245,14 @@ daily AS (
         source,
   -- We count number of submssions overall...
         COUNT(*) AS submissions,
-  -- We count number of submissions that are valid...
+  -- We count number of submissions that are invalid by using WHERE NOT is_valid...
   -- We use filter statement for well, filtering...
   -- I know FILTER is not really present in every db, and that in Snowflake this was added recently...
         COUNT(*) FILTER (
             WHERE NOT is_valid
         ) AS invalid
     FROM classified
-  -- We also use day in group by as we don't rely on datetime here...
+  -- We convert timestamp to date so submissions are aggregated by a calendar day...
     GROUP BY day, source
 ),
 
@@ -427,3 +430,7 @@ ORDER BY b.submission_id;
 
 -- As we established in previous tasks the columns are as such
 -- This table is now ready for analysis
+
+-- I would use materialized view and some orchestration tool to handle the model since views tend to slow done queries...
+-- Indexing is not necessary if we're working with a data warehouse and is not even possible, that is something to keep in mind.
+-- When using something like postgres it's good to index on primary key, join columns, anything with unique values pretty much...
